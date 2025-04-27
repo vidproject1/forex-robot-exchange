@@ -16,6 +16,9 @@ import Register from "./pages/Register";
 import Messages from "./pages/Messages";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
+import SellerDashboard from "./pages/SellerDashboard";
+import CreateRobotListing from "./pages/CreateRobotListing";
+import EditRobotListing from "./pages/EditRobotListing";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +31,9 @@ const AppRoutes = () => (
     <Route path="/register" element={<Register />} />
     <Route path="/messages" element={<Messages />} />
     <Route path="/about" element={<About />} />
+    <Route path="/seller-dashboard" element={<SellerDashboard />} />
+    <Route path="/seller-dashboard/create" element={<CreateRobotListing />} />
+    <Route path="/seller-dashboard/edit/:id" element={<EditRobotListing />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

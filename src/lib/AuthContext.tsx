@@ -9,6 +9,7 @@ interface AuthContextType {
   session: Session | null;
   signOut: () => Promise<void>;
   isLoading: boolean;
+  accountType: string | null;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -16,20 +17,31 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   signOut: async () => {},
   isLoading: true,
+  accountType: null,
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [accountType, setAccountType] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        
+        // Get user's account type from metadata
+        if (session?.user) {
+          const userAccountType = session.user.user_metadata.account_type;
+          setAccountType(userAccountType || null);
+        } else {
+          setAccountType(null);
+        }
+        
         setIsLoading(false);
       }
     );
@@ -38,6 +50,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      // Get user's account type from metadata
+      if (session?.user) {
+        const userAccountType = session.user.user_metadata.account_type;
+        setAccountType(userAccountType || null);
+      }
+      
       setIsLoading(false);
     });
 
@@ -50,7 +69,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, signOut, isLoading }}>
+    <AuthContext.Provider value={{ user, session, signOut, isLoading, accountType }}>
       {children}
     </AuthContext.Provider>
   );
