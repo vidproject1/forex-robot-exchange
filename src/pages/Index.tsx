@@ -3,77 +3,26 @@ import { Link } from "react-router-dom";
 import { NavBar } from "@/components/NavBar";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/SearchBar";
-import { RobotCard, RobotCardProps } from "@/components/RobotCard";
-
-// Mock data for robots
-const mockRobots: RobotCardProps[] = [
-  {
-    id: "1",
-    title: "TrendWave Pro",
-    description: "Advanced trend-following robot with intelligent entry and exit points. Optimized for major currency pairs.",
-    price: 299,
-    rating: 4.5,
-    tags: ["Trend", "Low Risk", "Major Pairs"],
-    imageUrl: "/placeholder.svg"
-  },
-  {
-    id: "2",
-    title: "ScalpMaster Elite",
-    description: "High-frequency scalping robot designed for quick in-and-out trades during volatile market conditions.",
-    price: 499,
-    rating: 4.2,
-    tags: ["Scalping", "High Frequency", "Volatile Markets"],
-    imageUrl: "/placeholder.svg"
-  },
-  {
-    id: "3",
-    title: "Reversal Oracle",
-    description: "Identifies potential market reversals using a combination of indicators and price action analysis.",
-    price: 399,
-    rating: 3.8,
-    tags: ["Reversals", "Indicators", "All Pairs"],
-    imageUrl: "/placeholder.svg"
-  },
-  {
-    id: "4",
-    title: "Grid Trader Pro",
-    description: "Implements a grid trading strategy to capitalize on ranging markets with multiple entry and exit points.",
-    price: 349,
-    rating: 4.0,
-    tags: ["Grid", "Ranging Markets", "Multi-Entry"],
-    imageUrl: "/placeholder.svg"
-  },
-  {
-    id: "5",
-    title: "NewsHunter",
-    description: "Specially designed to trade economic news releases with adjustable risk parameters and instant execution.",
-    price: 599,
-    rating: 4.7,
-    tags: ["News Trading", "Fast Execution", "High Risk"],
-    imageUrl: "/placeholder.svg"
-  },
-  {
-    id: "6",
-    title: "Pattern Scanner",
-    description: "Scans the market for high-probability chart patterns and executes trades based on historical performance.",
-    price: 449,
-    rating: 4.1,
-    tags: ["Patterns", "Technical Analysis", "All Timeframes"],
-    imageUrl: "/placeholder.svg"
-  }
-];
+import { RobotCard } from "@/components/RobotCard";
+import { useRobots } from "@/hooks/useRobots";
+import type { SortOption } from "@/types/robot";
 
 export default function Index() {
-  const [filteredRobots, setFilteredRobots] = useState(mockRobots);
-  const [sortOption, setSortOption] = useState("newest");
+  const { data: robots = [] } = useRobots();
+  const [filteredRobots, setFilteredRobots] = useState(robots);
+  const [sortOption, setSortOption] = useState<SortOption>("newest");
+
+  useState(() => {
+    setFilteredRobots(robots);
+  }, [robots]);
 
   const handleSearch = (query: string) => {
     if (!query.trim()) {
-      setFilteredRobots(mockRobots);
+      setFilteredRobots(robots);
       return;
     }
 
-    const filtered = mockRobots.filter((robot) => 
+    const filtered = robots.filter((robot) => 
       robot.title.toLowerCase().includes(query.toLowerCase()) || 
       robot.description.toLowerCase().includes(query.toLowerCase()) ||
       robot.tags?.some(tag => tag.toLowerCase().includes(query.toLowerCase()))
@@ -82,7 +31,7 @@ export default function Index() {
   };
 
   const handleSortChange = (sortBy: string) => {
-    setSortOption(sortBy);
+    setSortOption(sortBy as SortOption);
     let sorted = [...filteredRobots];
     
     switch (sortBy) {
@@ -96,9 +45,7 @@ export default function Index() {
         sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
         break;
       case "newest":
-        // In a real app, this would sort by creation date
-        // For now, we'll keep the original order
-        sorted = [...mockRobots];
+        sorted = [...robots];
         break;
       default:
         break;
@@ -106,6 +53,8 @@ export default function Index() {
     
     setFilteredRobots(sorted);
   };
+
+  const displayedRobots = filteredRobots.slice(0, 6);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -151,9 +100,14 @@ export default function Index() {
           <SearchBar onSearch={handleSearch} onSortChange={handleSortChange} />
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-10">
-            {filteredRobots.map((robot) => (
+            {displayedRobots.map((robot) => (
               <RobotCard key={robot.id} {...robot} />
             ))}
+            {displayedRobots.length === 0 && (
+              <div className="col-span-full text-center py-10">
+                <p className="text-muted-foreground">No robots found matching your search criteria.</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
