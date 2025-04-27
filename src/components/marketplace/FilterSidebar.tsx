@@ -31,11 +31,12 @@ export function FilterSidebar({
   activeFilters,
 }: FilterSidebarProps) {
   const handleTagToggle = (tag: string) => {
-    setSelectedTags(prev =>
-      prev.includes(tag)
-        ? prev.filter((t) => t !== tag)
-        : [...prev, tag]
-    );
+    // Fix: Create a new array directly instead of using a function that returns an array
+    const newSelectedTags = selectedTags.includes(tag)
+      ? selectedTags.filter((t) => t !== tag)
+      : [...selectedTags, tag];
+    
+    setSelectedTags(newSelectedTags);
   };
 
   return (
