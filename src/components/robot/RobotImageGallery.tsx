@@ -1,34 +1,97 @@
 
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { useImageUpload } from "@/hooks/useImageUpload";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface RobotImageGalleryProps {
   mainImage: string;
   title: string;
+  robotId?: string;
+  images?: string[];
+  editable?: boolean;
+  onImagesUpdate?: (images: string[]) => void;
 }
 
-export function RobotImageGallery({ mainImage, title }: RobotImageGalleryProps) {
+export function RobotImageGallery({ 
+  mainImage, 
+  title, 
+  robotId,
+  images = [],
+  editable = false,
+  onImagesUpdate
+}: RobotImageGalleryProps) {
+  const { uploadImage, isUploading } = useImageUpload();
+  const { toast } = useToast();
+  const [currentImages, setCurrentImages] = useState<string[]>(images);
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const imageUrl = await uploadImage(file);
+    if (imageUrl) {
+      const updatedImages = [...currentImages, imageUrl];
+      setCurrentImages(updatedImages);
+      onImagesUpdate?.(updatedImages);
+
+      if (robotId) {
+        const { error } = await supabase
+          .from('robots')
+          .update({ images: updatedImages })
+          .eq('id', robotId);
+
+        if (error) {
+          toast({
+            title: "Error updating robot images",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+      }
+    }
+  };
+
   return (
     <div className="w-full">
       <div className="aspect-video rounded-lg overflow-hidden bg-muted mb-4">
         <img
-          src={mainImage}
+          src={currentImages[0] || mainImage}
           alt={title}
           className="w-full h-full object-cover"
         />
       </div>
       <div className="grid grid-cols-4 gap-2">
-        {Array.from({ length: 4 }).map((_, index) => (
+        {currentImages.map((image, index) => (
           <div
             key={index}
             className="aspect-square rounded bg-muted overflow-hidden"
           >
             <img
-              src="/placeholder.svg"
-              alt="Preview"
+              src={image}
+              alt={`Preview ${index + 1}`}
               className="w-full h-full object-cover"
             />
           </div>
         ))}
+        {editable && currentImages.length < 4 && (
+          <div className="aspect-square rounded bg-muted flex items-center justify-center">
+            <label htmlFor="image-upload" className="cursor-pointer">
+              <input
+                id="image-upload"
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={isUploading}
+              />
+              <Button variant="ghost" disabled={isUploading}>
+                {isUploading ? 'Uploading...' : 'Add Image'}
+              </Button>
+            </label>
+          </div>
+        )}
       </div>
     </div>
   );

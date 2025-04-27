@@ -15,6 +15,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { RobotImageGallery } from "@/components/ui/robot-image-gallery";
 
 type Platform = "mt4" | "mt5" | "ctrader";
 
@@ -28,6 +29,7 @@ interface RobotFormProps {
     features?: string[];
     compatibility?: string[];
     long_description?: string;
+    images?: string[];
   };
   mode: "create" | "edit";
 }
@@ -41,6 +43,7 @@ export function RobotForm({ initialData, mode }: RobotFormProps) {
     features: [],
     compatibility: [],
     long_description: "",
+    images: [],
     ...initialData,
   };
 
@@ -74,6 +77,13 @@ export function RobotForm({ initialData, mode }: RobotFormProps) {
     }));
   };
 
+  const handleImagesUpdate = (newImages: string[]) => {
+    setFormData(prev => ({
+      ...prev,
+      images: newImages
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
@@ -97,6 +107,7 @@ export function RobotForm({ initialData, mode }: RobotFormProps) {
         features: formData.features,
         compatibility: formData.compatibility,
         seller_id: user.id,
+        images: formData.images,
       };
 
       if (mode === "create") {
@@ -143,6 +154,15 @@ export function RobotForm({ initialData, mode }: RobotFormProps) {
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
+          <RobotImageGallery
+            mainImage="/placeholder.svg"
+            title={formData.title || "Robot Image"}
+            images={formData.images || []}
+            editable={true}
+            onImagesUpdate={handleImagesUpdate}
+            robotId={initialData?.id}
+          />
+          
           <div className="space-y-2">
             <Label htmlFor="title">Title</Label>
             <Input

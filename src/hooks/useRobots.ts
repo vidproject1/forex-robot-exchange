@@ -19,10 +19,10 @@ export function useRobots() {
         id: robot.id,
         title: robot.title,
         description: robot.description,
-        price: robot.price, // Remove parseFloat to avoid type mismatch
-        rating: 4.5, // Default rating until we implement a rating system
+        price: robot.price,
+        rating: 4.5,
         tags: Array.isArray(robot.features) ? robot.features.slice(0, 3) : [],
-        imageUrl: "/placeholder.svg" // Default image until we implement image uploads
+        imageUrl: robot.images?.[0] || "/placeholder.svg"
       })) as RobotCardProps[];
     }
   });

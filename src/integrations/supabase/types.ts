@@ -152,6 +152,7 @@ export type Database = {
           description: string
           features: string[] | null
           id: string
+          images: string[] | null
           long_description: string | null
           platform: Database["public"]["Enums"]["trading_platform"]
           price: number
@@ -166,6 +167,7 @@ export type Database = {
           description: string
           features?: string[] | null
           id?: string
+          images?: string[] | null
           long_description?: string | null
           platform: Database["public"]["Enums"]["trading_platform"]
           price: number
@@ -180,6 +182,7 @@ export type Database = {
           description?: string
           features?: string[] | null
           id?: string
+          images?: string[] | null
           long_description?: string | null
           platform?: Database["public"]["Enums"]["trading_platform"]
           price?: number
