@@ -63,7 +63,7 @@ export default function RobotDetail() {
               description={robot.description}
             />
             
-            <ContactSeller />
+            <ContactSeller sellerId={robot.seller_id} />
             
             <SellerProfile 
               username={sellerProfile?.username}
