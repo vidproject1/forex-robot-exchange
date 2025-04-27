@@ -7,15 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { formatMessageTime } from "@/utils/dateUtils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ChatWindowProps {
   chat: Chat | null;
   newMessage: string;
   onNewMessageChange: (message: string) => void;
   onSendMessage: () => void;
+  isLoading?: boolean;
 }
 
-export function ChatWindow({ chat, newMessage, onNewMessageChange, onSendMessage }: ChatWindowProps) {
+export function ChatWindow({ chat, newMessage, onNewMessageChange, onSendMessage, isLoading }: ChatWindowProps) {
   if (!chat) {
     return (
       <Card className="h-[calc(100vh-16rem)] flex flex-col">
@@ -26,6 +28,38 @@ export function ChatWindow({ chat, newMessage, onNewMessageChange, onSendMessage
               Select a conversation from the list to view messages
             </p>
           </div>
+        </div>
+      </Card>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <Card className="h-[calc(100vh-16rem)] flex flex-col">
+        <CardHeader className="px-6 py-4 border-b flex-shrink-0">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-3">
+              <Skeleton className="h-9 w-9 rounded-full" />
+              <div>
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-4 w-16 mt-1" />
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+
+        <ScrollArea className="flex-1 p-4">
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex justify-start">
+                <Skeleton className="h-16 w-2/3 rounded-lg" />
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+
+        <div className="p-4 border-t">
+          <Skeleton className="h-10 w-full" />
         </div>
       </Card>
     );

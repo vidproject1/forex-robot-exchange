@@ -3,74 +3,50 @@ import { useState } from "react";
 import { NavBar } from "@/components/NavBar";
 import { ChatList } from "@/components/chat/ChatList";
 import { ChatWindow } from "@/components/chat/ChatWindow";
-import { mockChats } from "@/data/mockChats";
+import { useConversations } from "@/hooks/useConversations";
+import { useConversationMessages } from "@/hooks/useConversationMessages";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/AuthContext";
 import type { Chat } from "@/types/chat";
 
 export default function Messages() {
-  const [selectedChat, setSelectedChat] = useState<Chat | null>(mockChats[0]);
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [newMessage, setNewMessage] = useState("");
-  const [chats, setChats] = useState(mockChats);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  
+  const { data: chats = [], isLoading: isLoadingChats } = useConversations();
+  const { data: messages = [], isLoading: isLoadingMessages } = useConversationMessages(selectedChat?.id);
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim() || !selectedChat) return;
+  // Update selected chat with latest messages
+  const currentChat = selectedChat ? {
+    ...selectedChat,
+    messages,
+  } : null;
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !selectedChat?.id || !user) return;
     
-    const updatedMessage = {
-      id: `${selectedChat.id}-${selectedChat.messages.length + 1}`,
-      content: newMessage,
-      sender: "user" as const,
-      timestamp: new Date(),
-    };
-    
-    const updatedChats = chats.map((chat) => {
-      if (chat.id === selectedChat.id) {
-        return {
-          ...chat,
-          messages: [...chat.messages, updatedMessage],
-          lastMessage: newMessage,
-          timestamp: new Date(),
-        };
-      }
-      return chat;
-    });
-    
-    setChats(updatedChats);
-    setSelectedChat({
-      ...selectedChat,
-      messages: [...selectedChat.messages, updatedMessage],
-      lastMessage: newMessage,
-      timestamp: new Date(),
-    });
-    setNewMessage("");
-    
-    // Simulate a response after a short delay
-    setTimeout(() => {
-      const responseMessage = {
-        id: `${selectedChat.id}-${selectedChat.messages.length + 2}`,
-        content: "Thank you for your message. I'll get back to you soon.",
-        sender: "other" as const,
-        timestamp: new Date(),
-      };
+    try {
+      const { error: messageError } = await supabase
+        .from('conversation_messages')
+        .insert({
+          conversation_id: selectedChat.id,
+          sender_id: user.id,
+          content: newMessage
+        });
+
+      if (messageError) throw messageError;
       
-      const updatedChatsWithResponse = chats.map((chat) => {
-        if (chat.id === selectedChat.id) {
-          return {
-            ...chat,
-            messages: [...chat.messages, updatedMessage, responseMessage],
-            lastMessage: responseMessage.content,
-            timestamp: new Date(),
-          };
-        }
-        return chat;
+      setNewMessage("");
+    } catch (error: any) {
+      toast({
+        title: "Error sending message",
+        description: error.message,
+        variant: "destructive",
       });
-      
-      setChats(updatedChatsWithResponse);
-      setSelectedChat({
-        ...selectedChat,
-        messages: [...selectedChat.messages, updatedMessage, responseMessage],
-        lastMessage: responseMessage.content,
-        timestamp: new Date(),
-      });
-    }, 1500);
+    }
   };
 
   return (
@@ -84,17 +60,19 @@ export default function Messages() {
           <div className="md:col-span-1">
             <ChatList
               chats={chats}
-              selectedChat={selectedChat}
+              selectedChat={currentChat}
               onSelectChat={setSelectedChat}
+              isLoading={isLoadingChats}
             />
           </div>
           
           <div className="md:col-span-2">
             <ChatWindow
-              chat={selectedChat}
+              chat={currentChat}
               newMessage={newMessage}
               onNewMessageChange={setNewMessage}
               onSendMessage={handleSendMessage}
+              isLoading={isLoadingMessages}
             />
           </div>
         </div>
