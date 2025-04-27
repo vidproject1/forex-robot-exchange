@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavBar } from "@/components/NavBar";
 import { ChatList } from "@/components/chat/ChatList";
 import { ChatWindow } from "@/components/chat/ChatWindow";
@@ -48,6 +48,13 @@ export default function Messages() {
       });
     }
   };
+
+  // If the selected chat is null but we have chats, select the first one
+  useEffect(() => {
+    if (selectedChat === null && chats.length > 0 && !isLoadingChats) {
+      setSelectedChat(chats[0]);
+    }
+  }, [chats, selectedChat, isLoadingChats]);
 
   return (
     <div className="min-h-screen flex flex-col">

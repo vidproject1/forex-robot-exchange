@@ -19,4 +19,5 @@ export interface Chat {
   unread: boolean;
   timestamp: Date;
   messages: Message[];
+  robotId: string; // Add robotId to Chat interface
 }

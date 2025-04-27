@@ -1,5 +1,6 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import type { Message } from "@/types/chat";
@@ -7,6 +8,37 @@ import type { Message } from "@/types/chat";
 export function useConversationMessages(conversationId: string | undefined) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  // Set up real-time subscription
+  useEffect(() => {
+    if (!conversationId) return;
+
+    // Subscribe to new messages in this conversation
+    const channel = supabase
+      .channel('conversation-messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'conversation_messages',
+          filter: `conversation_id=eq.${conversationId}`
+        },
+        (payload) => {
+          console.log('New message received via real-time:', payload);
+          // Invalidate query to refresh messages
+          queryClient.invalidateQueries({
+            queryKey: ['conversation', conversationId, 'messages']
+          });
+        }
+      )
+      .subscribe();
+
+    // Clean up subscription when component unmounts
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId, queryClient]);
 
   return useQuery({
     queryKey: ['conversation', conversationId, 'messages'],

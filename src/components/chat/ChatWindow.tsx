@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { formatMessageTime } from "@/utils/dateUtils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect, useRef } from "react";
 
 interface ChatWindowProps {
   chat: Chat | null;
@@ -18,6 +19,16 @@ interface ChatWindowProps {
 }
 
 export function ChatWindow({ chat, newMessage, onNewMessageChange, onSendMessage, isLoading }: ChatWindowProps) {
+  // Create a ref for the messages container to auto-scroll to bottom
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [chat?.messages]);
+
   if (!chat) {
     return (
       <Card className="h-[calc(100vh-16rem)] flex flex-col">
@@ -80,7 +91,7 @@ export function ChatWindow({ chat, newMessage, onNewMessageChange, onSendMessage
             </div>
           </div>
           <Button variant="outline" size="sm" asChild>
-            <Link to={`/robot/1`}>View Robot</Link>
+            <Link to={`/robot/${chat.robotId}`}>View Robot</Link>
           </Button>
         </div>
       </CardHeader>
@@ -114,6 +125,7 @@ export function ChatWindow({ chat, newMessage, onNewMessageChange, onSendMessage
               </div>
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
 

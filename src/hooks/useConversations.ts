@@ -1,5 +1,6 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import type { Chat } from "@/types/chat";
@@ -7,6 +8,36 @@ import type { Chat } from "@/types/chat";
 export function useConversations() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  // Set up real-time subscription for conversation updates
+  useEffect(() => {
+    if (!user) return;
+
+    // Subscribe to conversation updates
+    const channel = supabase
+      .channel('conversations')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'conversations',
+          filter: `buyer_id=eq.${user.id},seller_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Conversation updated via real-time:', payload);
+          queryClient.invalidateQueries({
+            queryKey: ['conversations']
+          });
+        }
+      )
+      .subscribe();
+
+    // Clean up subscription when component unmounts
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient]);
 
   return useQuery({
     queryKey: ['conversations'],
@@ -59,6 +90,7 @@ export function useConversations() {
         
         return {
           id: conversation.id,
+          robotId: conversation.robot_id || '', // Include robot_id in the chat data
           user: {
             name: profileData?.username || 'Unknown User',
             avatarUrl: profileData?.avatar_url || '',
