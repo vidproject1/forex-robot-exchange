@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Upload } from "lucide-react";
 
 interface RobotImageGalleryProps {
   mainImage: string;
@@ -48,6 +49,11 @@ export function RobotImageGallery({
             description: error.message,
             variant: "destructive",
           });
+        } else {
+          toast({
+            title: "Image uploaded successfully",
+            description: "Your image has been added to the gallery",
+          });
         }
       }
     }
@@ -77,16 +83,23 @@ export function RobotImageGallery({
         ))}
         {editable && currentImages.length < 4 && (
           <div className="aspect-square rounded bg-muted flex items-center justify-center">
-            <label htmlFor="image-upload" className="cursor-pointer">
-              <input
-                id="image-upload"
-                type="file"
-                className="hidden"
-                accept="image/*"
-                onChange={handleImageUpload}
+            <input
+              id="image-upload"
+              type="file"
+              className="hidden"
+              accept="image/png,image/jpeg,image/jpg,image/svg+xml"
+              onChange={handleImageUpload}
+              disabled={isUploading}
+            />
+            <label htmlFor="image-upload" className="cursor-pointer w-full h-full flex items-center justify-center">
+              <Button 
+                variant="ghost" 
                 disabled={isUploading}
-              />
-              <Button variant="ghost" disabled={isUploading}>
+                className="w-full h-full flex flex-col gap-2"
+                type="button"
+                onClick={() => document.getElementById('image-upload')?.click()}
+              >
+                <Upload className="w-6 h-6" />
                 {isUploading ? 'Uploading...' : 'Add Image'}
               </Button>
             </label>
