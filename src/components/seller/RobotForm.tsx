@@ -15,7 +15,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { RobotImageGallery } from "@/components/ui/robot-image-gallery";
+import { RobotImageGallery } from "@/components/robot/RobotImageGallery";
 
 type Platform = "mt4" | "mt5" | "ctrader";
 
