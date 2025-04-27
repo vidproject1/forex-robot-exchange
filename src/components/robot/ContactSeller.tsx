@@ -1,30 +1,82 @@
-
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-export function ContactSeller({ sellerId }: { sellerId?: string }) {
+export function ContactSeller({ sellerId, robotId }: { sellerId?: string; robotId?: string }) {
   const [isMessageVisible, setIsMessageVisible] = useState(false);
   const [message, setMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const handleSendMessage = () => {
-    if (!message.trim()) return;
+  const handleSendMessage = async () => {
+    if (!message.trim() || !sellerId || !robotId || !user) return;
     
-    // Here you would implement the actual message sending logic
-    // For now, we'll just show a success toast
-    toast({
-      title: "Message sent",
-      description: "Your message has been sent to the seller.",
-    });
-    
-    setMessage("");
-    setIsMessageVisible(false);
+    setIsSending(true);
+    try {
+      // First, create or find existing conversation
+      const { data: existingConvo, error: convoError } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('buyer_id', user.id)
+        .eq('seller_id', sellerId)
+        .eq('robot_id', robotId)
+        .single();
+
+      let conversationId;
+      
+      if (convoError) {
+        // Create new conversation
+        const { data: newConvo, error: createError } = await supabase
+          .from('conversations')
+          .insert({
+            buyer_id: user.id,
+            seller_id: sellerId,
+            robot_id: robotId
+          })
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        conversationId = newConvo.id;
+      } else {
+        conversationId = existingConvo.id;
+      }
+
+      // Send message
+      const { error: messageError } = await supabase
+        .from('conversation_messages')
+        .insert({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          content: message
+        });
+
+      if (messageError) throw messageError;
+
+      toast({
+        title: "Message sent",
+        description: "Your message has been sent to the seller.",
+      });
+      
+      setMessage("");
+      setIsMessageVisible(false);
+      navigate('/messages');
+    } catch (error: any) {
+      toast({
+        title: "Error sending message",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const showMessageForm = () => {
@@ -45,12 +97,22 @@ export function ContactSeller({ sellerId }: { sellerId?: string }) {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 rows={4}
+                disabled={isSending}
               />
               <div className="flex flex-row gap-2 justify-end">
-                <Button variant="outline" onClick={() => setIsMessageVisible(false)}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsMessageVisible(false)}
+                  disabled={isSending}
+                >
                   Cancel
                 </Button>
-                <Button onClick={handleSendMessage}>Send Message</Button>
+                <Button 
+                  onClick={handleSendMessage}
+                  disabled={!message.trim() || isSending}
+                >
+                  {isSending ? "Sending..." : "Send Message"}
+                </Button>
               </div>
             </CardContent>
           </Card>
