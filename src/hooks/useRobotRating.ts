@@ -9,6 +9,11 @@ interface RatingData {
   comment?: string;
 }
 
+interface UserRating {
+  rating: number;
+  comment?: string;
+}
+
 export function useRobotRating(robotId: string) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -37,14 +42,14 @@ export function useRobotRating(robotId: string) {
         .select('rating, comment')
         .eq('robot_id', robotId)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        if (error.code === 'PGRST116') return null; // No rating found
-        throw error;
+        if (error.code !== 'PGRST116') throw error; // Not the "no rows returned" error
+        return null;
       }
 
-      return data;
+      return data as UserRating | null;
     }
   });
 
@@ -54,14 +59,11 @@ export function useRobotRating(robotId: string) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Must be logged in to rate');
 
-      const { error } = await supabase
-        .from('robot_ratings')
-        .upsert({
-          robot_id: robotId,
-          user_id: user.id,
-          rating: ratingData.rating,
-          comment: ratingData.comment
-        });
+      const { error } = await supabase.rpc('upsert_robot_rating', {
+        p_robot_id: robotId,
+        p_rating: ratingData.rating,
+        p_comment: ratingData.comment || null
+      });
 
       if (error) throw error;
 

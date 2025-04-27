@@ -60,10 +60,10 @@ export default function RobotDetail() {
           
           <div className="w-full lg:w-1/2">
             <RobotDetails
+              id={robot.id}
               title={robot.title}
               platform={robot.platform}
               tags={robot.tags}
-              rating={robot.rating}
               price={robot.price}
               description={robot.description}
             />
