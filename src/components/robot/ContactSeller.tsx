@@ -17,10 +17,26 @@ export function ContactSeller({ sellerId, robotId }: { sellerId?: string; robotI
   const navigate = useNavigate();
 
   const handleSendMessage = async () => {
-    if (!message.trim() || !sellerId || !robotId || !user) {
+    // Log values to help with debugging
+    console.log("Message content:", message);
+    console.log("Message trimmed length:", message.trim().length);
+    console.log("Seller ID:", sellerId);
+    console.log("Robot ID:", robotId);
+    console.log("Current user:", user);
+    
+    if (!message.trim()) {
       toast({
         title: "Error sending message",
         description: "Please enter a message to send.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!sellerId || !robotId || !user) {
+      toast({
+        title: "Error sending message",
+        description: "Missing required information to send message.",
         variant: "destructive",
       });
       return;
@@ -132,7 +148,7 @@ export function ContactSeller({ sellerId, robotId }: { sellerId?: string; robotI
                 </Button>
                 <Button 
                   onClick={handleSendMessage}
-                  disabled={!message.trim() || isSending}
+                  disabled={isSending}
                 >
                   {isSending ? "Sending..." : "Send Message"}
                 </Button>
