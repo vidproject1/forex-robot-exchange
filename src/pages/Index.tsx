@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { NavBar } from "@/components/NavBar";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,8 @@ export default function Index() {
   const [filteredRobots, setFilteredRobots] = useState(robots);
   const [sortOption, setSortOption] = useState<SortOption>("newest");
 
-  useState(() => {
+  // Fix: Replace useState with useEffect
+  useEffect(() => {
     setFilteredRobots(robots);
   }, [robots]);
 
