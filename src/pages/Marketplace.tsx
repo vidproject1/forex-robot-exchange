@@ -1,86 +1,94 @@
+
 import { useState, useEffect } from "react";
 import { NavBar } from "@/components/NavBar";
 import { SearchBar } from "@/components/SearchBar";
 import { FilterSidebar } from "@/components/marketplace/FilterSidebar";
 import { RobotsGrid } from "@/components/marketplace/RobotsGrid";
-import { RobotCardProps } from "@/types/robot";
-import { allRobots, getAllTags } from "@/data/mockRobots";
+import { RobotCardProps, SortOption } from "@/types/robot";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Marketplace() {
-  const [robots, setRobots] = useState(allRobots);
+  const [robots, setRobots] = useState<RobotCardProps[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 600]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [minRating, setMinRating] = useState(0);
   const [activeFilters, setActiveFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortOption, setSortOption] = useState("newest");
+  const [sortOption, setSortOption] = useState<SortOption>("newest");
+  const { toast } = useToast();
 
-  const allTags = getAllTags(allRobots);
-
-  // Apply filters
+  // Fetch robots from Supabase
   useEffect(() => {
-    let filtered = [...allRobots];
-    
-    // Filter by price range
-    filtered = filtered.filter(
-      (robot) => robot.price >= priceRange[0] && robot.price <= priceRange[1]
-    );
-    
-    // Filter by minimum rating
-    if (minRating > 0) {
-      filtered = filtered.filter((robot) => (robot.rating || 0) >= minRating);
-    }
-    
-    // Filter by selected tags
-    if (selectedTags.length > 0) {
-      filtered = filtered.filter((robot) =>
-        robot.tags?.some((tag) => selectedTags.includes(tag))
-      );
-    }
-    
-    // Filter by search query
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (robot) =>
-          robot.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          robot.description.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-    
-    // Apply sorting
-    switch (sortOption) {
-      case "price-asc":
-        filtered.sort((a, b) => a.price - b.price);
-        break;
-      case "price-desc":
-        filtered.sort((a, b) => b.price - a.price);
-        break;
-      case "rating-desc":
-        filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-        break;
-      default:
-        // 'newest' - keep original order
-        break;
-    }
-    
-    setRobots(filtered);
-    
-    // Check if any filters are active
-    setActiveFilters(
-      priceRange[0] > 0 ||
-      priceRange[1] < 600 ||
-      minRating > 0 ||
-      selectedTags.length > 0 ||
-      !!searchQuery
-    );
-  }, [priceRange, selectedTags, minRating, searchQuery, sortOption]);
+    const fetchRobots = async () => {
+      try {
+        let query = supabase
+          .from("robots")
+          .select("*")
+          .eq("active", true)
+          .gte("price", priceRange[0])
+          .lte("price", priceRange[1]);
+
+        // Apply search filter if query exists
+        if (searchQuery) {
+          query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
+        }
+
+        // Apply sorting
+        switch (sortOption) {
+          case "price-asc":
+            query = query.order("price", { ascending: true });
+            break;
+          case "price-desc":
+            query = query.order("price", { ascending: false });
+            break;
+          case "newest":
+            query = query.order("created_at", { ascending: false });
+            break;
+          default:
+            query = query.order("created_at", { ascending: false });
+        }
+
+        const { data, error } = await query;
+
+        if (error) throw error;
+
+        // Transform the data to match RobotCardProps
+        const transformedRobots: RobotCardProps[] = data.map(robot => ({
+          id: robot.id,
+          title: robot.title,
+          description: robot.description,
+          price: robot.price,
+          imageUrl: "/placeholder.svg", // Using placeholder for now
+          tags: [], // We'll implement tags later if needed
+        }));
+
+        setRobots(transformedRobots);
+      } catch (error: any) {
+        console.error("Error fetching robots:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load robots. Please try again later.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRobots();
+  }, [priceRange, searchQuery, sortOption, toast]);
+
+  // Get all unique tags from robots
+  const allTags = Array.from(new Set(robots.flatMap(robot => robot.tags || [])));
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
   };
 
   const handleSortChange = (sortBy: string) => {
-    setSortOption(sortBy);
+    setSortOption(sortBy as SortOption);
   };
 
   const resetFilters = () => {
@@ -90,6 +98,19 @@ export default function Marketplace() {
     setSearchQuery("");
     setSortOption("newest");
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <NavBar />
+        <main className="flex-1 container mx-auto py-8 px-4">
+          <div className="flex justify-center items-center h-64">
+            <p className="text-lg text-muted-foreground">Loading robots...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
