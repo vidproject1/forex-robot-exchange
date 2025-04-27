@@ -33,7 +33,8 @@ export function ContactSeller({ sellerId, robotId }: { sellerId?: string; robotI
       return;
     }
     
-    if (!sellerId || !robotId || !user) {
+    // Check for valid string values, not just existence
+    if (!sellerId || typeof sellerId !== 'string' || !robotId || typeof robotId !== 'string' || !user) {
       toast({
         title: "Error sending message",
         description: "Missing required information to send message.",

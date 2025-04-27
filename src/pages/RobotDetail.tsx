@@ -63,7 +63,10 @@ export default function RobotDetail() {
               description={robot.description}
             />
             
-            <ContactSeller sellerId={robot.seller_id} />
+            <ContactSeller 
+              sellerId={robot.seller_id} 
+              robotId={id} // Use the URL parameter directly instead of robot.id
+            />
             
             <SellerProfile 
               username={sellerProfile?.username}
