@@ -17,13 +17,15 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
+type Platform = "mt4" | "mt5" | "ctrader";
+
 interface RobotFormProps {
   initialData?: {
     id?: string;
     title: string;
     description: string;
     price: number;
-    platform: string;
+    platform: Platform;
   };
   mode: "create" | "edit";
 }
@@ -33,7 +35,7 @@ export function RobotForm({ initialData, mode }: RobotFormProps) {
     title: "",
     description: "",
     price: 199,
-    platform: "mt4",
+    platform: "mt4" as Platform,
     ...initialData,
   };
 
@@ -51,7 +53,7 @@ export function RobotForm({ initialData, mode }: RobotFormProps) {
     }));
   };
 
-  const handlePlatformChange = (value: string) => {
+  const handlePlatformChange = (value: Platform) => {
     setFormData((prev) => ({
       ...prev,
       platform: value,
@@ -181,8 +183,6 @@ export function RobotForm({ initialData, mode }: RobotFormProps) {
                 <SelectItem value="mt4">MetaTrader 4</SelectItem>
                 <SelectItem value="mt5">MetaTrader 5</SelectItem>
                 <SelectItem value="ctrader">cTrader</SelectItem>
-                <SelectItem value="ninjatrader">NinjaTrader</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
           </div>
