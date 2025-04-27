@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -16,10 +17,19 @@ export function ContactSeller({ sellerId, robotId }: { sellerId?: string; robotI
   const navigate = useNavigate();
 
   const handleSendMessage = async () => {
-    if (!message.trim() || !sellerId || !robotId || !user) return;
+    if (!message.trim() || !sellerId || !robotId || !user) {
+      toast({
+        title: "Error sending message",
+        description: "Please enter a message to send.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsSending(true);
     try {
+      console.log("Sending message with data:", { sellerId, robotId, userId: user.id, message });
+      
       // First, create or find existing conversation
       const { data: existingConvo, error: convoError } = await supabase
         .from('conversations')
@@ -32,6 +42,7 @@ export function ContactSeller({ sellerId, robotId }: { sellerId?: string; robotI
       let conversationId;
       
       if (convoError) {
+        console.log("No existing conversation found, creating new one");
         // Create new conversation
         const { data: newConvo, error: createError } = await supabase
           .from('conversations')
@@ -43,22 +54,33 @@ export function ContactSeller({ sellerId, robotId }: { sellerId?: string; robotI
           .select()
           .single();
 
-        if (createError) throw createError;
+        if (createError) {
+          console.error("Error creating conversation:", createError);
+          throw createError;
+        }
+        console.log("New conversation created:", newConvo);
         conversationId = newConvo.id;
       } else {
+        console.log("Found existing conversation:", existingConvo);
         conversationId = existingConvo.id;
       }
 
       // Send message
-      const { error: messageError } = await supabase
+      const { data: messageData, error: messageError } = await supabase
         .from('conversation_messages')
         .insert({
           conversation_id: conversationId,
           sender_id: user.id,
           content: message
-        });
+        })
+        .select();
 
-      if (messageError) throw messageError;
+      if (messageError) {
+        console.error("Error sending message:", messageError);
+        throw messageError;
+      }
+      
+      console.log("Message sent successfully:", messageData);
 
       toast({
         title: "Message sent",
@@ -69,9 +91,10 @@ export function ContactSeller({ sellerId, robotId }: { sellerId?: string; robotI
       setIsMessageVisible(false);
       navigate('/messages');
     } catch (error: any) {
+      console.error("Error in send message process:", error);
       toast({
         title: "Error sending message",
-        description: error.message,
+        description: error.message || "Failed to send message. Please try again.",
         variant: "destructive",
       });
     } finally {
