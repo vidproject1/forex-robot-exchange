@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Menu, X, User, Settings, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
+import { MessageButton } from "@/components/MessageButton";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,6 +56,7 @@ export function NavBar() {
           
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            {user && <MessageButton />}
             
             {!isMobile ? (
               <div className="flex items-center gap-2">
