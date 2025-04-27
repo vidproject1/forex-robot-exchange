@@ -7,6 +7,9 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/AuthContext";
 
+// Import the Platform type from the robot types file
+import { Platform } from "@/types/robot";
+
 interface Robot {
   id: string;
   title: string;
@@ -89,7 +92,7 @@ export default function EditRobotListing() {
             title: robot.title,
             description: robot.description,
             price: robot.price,
-            platform: robot.platform,
+            platform: robot.platform as Platform,
           }}
           mode="edit"
         />
