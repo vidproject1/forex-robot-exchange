@@ -81,8 +81,9 @@ export function MobileMenu({ isMenuOpen, setIsMenuOpen, isSeller }: MobileMenuPr
               </Link>
             </>
           )}
-        </nav>
+        </div>
       )}
     </>
   );
 }
+
