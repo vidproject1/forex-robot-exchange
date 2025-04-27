@@ -8,6 +8,7 @@ export const mockChats: Chat[] = [
       name: "TradeTech Solutions",
       avatarUrl: "/placeholder.svg",
       initials: "TS",
+      role: "Seller", // Added role
     },
     lastMessage: "Yes, the robot is compatible with MT4 and MT5.",
     unread: true,
@@ -26,7 +27,7 @@ export const mockChats: Chat[] = [
         timestamp: new Date(Date.now() - 1000 * 60 * 5),
       },
     ],
-    robotId: "robot-001" // Added robotId property
+    robotId: "robot-001"
   },
   {
     id: "2",
@@ -34,25 +35,26 @@ export const mockChats: Chat[] = [
       name: "Velocity Trading Systems",
       avatarUrl: "/placeholder.svg",
       initials: "VS",
+      role: "Seller", // Added role
     },
     lastMessage: "The ScalpMaster Elite includes detailed documentation and video tutorials.",
     unread: false,
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
     messages: [
       {
         id: "2-1",
         content: "Hi there, does your ScalpMaster Elite come with documentation?",
         sender: "user",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3), // 3 hours ago
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3),
       },
       {
         id: "2-2",
         content: "The ScalpMaster Elite includes detailed documentation and video tutorials.",
         sender: "other",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
       },
     ],
-    robotId: "robot-002" // Added robotId property
+    robotId: "robot-002"
   },
   {
     id: "3",
@@ -60,24 +62,25 @@ export const mockChats: Chat[] = [
       name: "Algo Trading Experts",
       avatarUrl: "/placeholder.svg",
       initials: "AE",
+      role: "Seller", // Added role
     },
     lastMessage: "Our support team is available 24/7 to help with any issues.",
     unread: false,
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
     messages: [
       {
         id: "3-1",
         content: "What kind of support do you offer after purchase?",
         sender: "user",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 25), // 25 hours ago
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 25),
       },
       {
         id: "3-2",
         content: "Our support team is available 24/7 to help with any issues.",
         sender: "other",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
       },
     ],
-    robotId: "robot-003" // Added robotId property
+    robotId: "robot-003"
   },
 ];
