@@ -6,7 +6,6 @@ import { ChatWindow } from "@/components/chat/ChatWindow";
 import { useConversations } from "@/hooks/useConversations";
 import { useConversationMessages } from "@/hooks/useConversationMessages";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/AuthContext";
 import type { Chat } from "@/types/chat";
 
@@ -17,7 +16,12 @@ export default function Messages() {
   const { toast } = useToast();
   
   const { data: chats = [], isLoading: isLoadingChats } = useConversations();
-  const { data: messages = [], isLoading: isLoadingMessages } = useConversationMessages(selectedChat?.id);
+  const { 
+    data: messages = [], 
+    isLoading: isLoadingMessages, 
+    sendMessage,
+    isError
+  } = useConversationMessages(selectedChat?.id);
 
   // Update selected chat with latest messages
   const currentChat = selectedChat ? {
@@ -29,16 +33,8 @@ export default function Messages() {
     if (!newMessage.trim() || !selectedChat?.id || !user) return;
     
     try {
-      const { error: messageError } = await supabase
-        .from('conversation_messages')
-        .insert({
-          conversation_id: selectedChat.id,
-          sender_id: user.id,
-          content: newMessage
-        });
-
-      if (messageError) throw messageError;
-      
+      // Use the sendMessage mutation from our hook
+      await sendMessage.mutateAsync(newMessage);
       setNewMessage("");
     } catch (error: any) {
       toast({
@@ -55,6 +51,17 @@ export default function Messages() {
       setSelectedChat(chats[0]);
     }
   }, [chats, selectedChat, isLoadingChats]);
+
+  // Show error notification if messages fail to load
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Error loading messages",
+        description: "Could not load conversation messages. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [isError, toast]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -80,6 +87,7 @@ export default function Messages() {
               onNewMessageChange={setNewMessage}
               onSendMessage={handleSendMessage}
               isLoading={isLoadingMessages}
+              isSending={sendMessage.isPending}
             />
           </div>
         </div>

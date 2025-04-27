@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import { formatMessageTime } from "@/utils/dateUtils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useRef } from "react";
+import { Loader2 } from "lucide-react";
 
 interface ChatWindowProps {
   chat: Chat | null;
@@ -16,9 +17,17 @@ interface ChatWindowProps {
   onNewMessageChange: (message: string) => void;
   onSendMessage: () => void;
   isLoading?: boolean;
+  isSending?: boolean;
 }
 
-export function ChatWindow({ chat, newMessage, onNewMessageChange, onSendMessage, isLoading }: ChatWindowProps) {
+export function ChatWindow({ 
+  chat, 
+  newMessage, 
+  onNewMessageChange, 
+  onSendMessage, 
+  isLoading,
+  isSending = false
+}: ChatWindowProps) {
   // Create a ref for the messages container to auto-scroll to bottom
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -110,18 +119,25 @@ export function ChatWindow({ chat, newMessage, onNewMessageChange, onSendMessage
                   message.sender === "user"
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted"
-                }`}
+                } ${message.id.startsWith('temp-') ? "opacity-70" : ""}`}
               >
                 <p className="text-sm">{message.content}</p>
-                <p
-                  className={`text-xs mt-1 ${
-                    message.sender === "user"
-                      ? "text-primary-foreground/70"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {formatMessageTime(message.timestamp)}
-                </p>
+                <div className="flex items-center justify-between mt-1">
+                  <p
+                    className={`text-xs ${
+                      message.sender === "user"
+                        ? "text-primary-foreground/70"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {formatMessageTime(message.timestamp)}
+                  </p>
+                  {message.id.startsWith('temp-') && (
+                    <div className="ml-2">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -142,9 +158,20 @@ export function ChatWindow({ chat, newMessage, onNewMessageChange, onSendMessage
             onChange={(e) => onNewMessageChange(e.target.value)}
             placeholder="Type your message..."
             className="flex-1"
+            disabled={isSending}
           />
-          <Button type="submit" disabled={!newMessage.trim()}>
-            Send
+          <Button 
+            type="submit" 
+            disabled={!newMessage.trim() || isSending}
+          >
+            {isSending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Sending
+              </>
+            ) : (
+              "Send"
+            )}
           </Button>
         </form>
       </div>
