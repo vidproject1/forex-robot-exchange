@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { NavBar } from "@/components/NavBar";
 import { Button } from "@/components/ui/button";
@@ -7,10 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { RobotCardProps } from "@/components/RobotCard";
+import { RobotCardProps } from "@/types/robot";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
-// Mock data for a specific robot
-const robotData: Record<string, RobotCardProps & {
+const robotExtraData: Record<string, {
   longDescription: string;
   features: string[];
   compatibility: string[];
@@ -19,20 +19,13 @@ const robotData: Record<string, RobotCardProps & {
   sellerJoined: string;
   videoUrl?: string;
 }> = {
-  "1": {
-    id: "1",
-    title: "TrendWave Pro",
-    description: "Advanced trend-following robot with intelligent entry and exit points. Optimized for major currency pairs.",
-    longDescription: "TrendWave Pro is a sophisticated forex trading robot designed to identify and capitalize on trending market conditions. Using a proprietary algorithm that combines multiple technical indicators, it can accurately detect the beginning and end of trends across various timeframes. The robot uses dynamic position sizing based on market volatility and implements trailing stop loss mechanisms to protect your profits while letting winners run. With years of backtesting and optimization, TrendWave Pro has been fine-tuned to perform well across different market conditions while maintaining a conservative risk profile.",
-    price: 299,
-    rating: 4.5,
-    tags: ["Trend", "Low Risk", "Major Pairs"],
-    imageUrl: "/placeholder.svg",
+  default: {
+    longDescription: "This robot is designed to automate your forex trading with advanced algorithms and risk management techniques.",
     features: [
-      "Adaptive trend detection algorithms",
+      "Adaptive algorithms",
       "Smart entry and exit points",
       "Dynamic position sizing",
-      "Trailing stop loss functionality",
+      "Risk management",
       "Multi-timeframe analysis",
       "Compatible with MT4 and MT5 platforms",
       "24/7 technical support",
@@ -44,49 +37,77 @@ const robotData: Record<string, RobotCardProps & {
       "Windows 7/8/10/11",
       "VPS supported"
     ],
-    sellerName: "TradeTech Solutions",
-    sellerRating: 4.8,
-    sellerJoined: "January 2021",
-    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ"
-  },
-  "2": {
-    id: "2",
-    title: "ScalpMaster Elite",
-    description: "High-frequency scalping robot designed for quick in-and-out trades during volatile market conditions.",
-    longDescription: "ScalpMaster Elite is a high-performance scalping robot built for traders who seek to capitalize on small price movements with high trading frequency. Using advanced market microstructure analysis, this robot identifies optimal entry points for quick trades with tight stop-loss and take-profit levels. It's specifically designed to operate effectively during high-volatility periods in the market, where quick price movements can be exploited for profit. The robot includes sophisticated risk management algorithms to protect your capital and prevent significant drawdowns.",
-    price: 499,
-    rating: 4.2,
-    tags: ["Scalping", "High Frequency", "Volatile Markets"],
-    imageUrl: "/placeholder.svg",
-    features: [
-      "Ultra-fast execution algorithms",
-      "Specialized for high volatility periods",
-      "Advanced risk management system",
-      "Multiple scalping strategies in one package",
-      "Customizable risk parameters",
-      "Detailed trade logs and statistics",
-      "Automatically adjusts to market conditions",
-      "Low-latency optimization"
-    ],
-    compatibility: [
-      "MetaTrader 4",
-      "MetaTrader 5",
-      "Windows 7/8/10/11",
-      "Low-latency VPS recommended"
-    ],
-    sellerName: "Velocity Trading Systems",
-    sellerRating: 4.6,
-    sellerJoined: "March 2020"
+    sellerName: "Trading Solutions",
+    sellerRating: 4.5,
+    sellerJoined: "January 2023",
   }
-  // Additional robots would be defined here...
 };
 
 export default function RobotDetail() {
   const { id } = useParams<{ id: string }>();
   const [isMessageVisible, setIsMessageVisible] = useState(false);
+  const [robot, setRobot] = useState<RobotCardProps & { platform?: string }>(); 
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
   
-  // If robot not found, show not found message
-  if (!id || !robotData[id]) {
+  useEffect(() => {
+    const fetchRobotDetails = async () => {
+      if (!id) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from("robots")
+          .select("*")
+          .eq("id", id)
+          .single();
+
+        if (error) {
+          throw error;
+        }
+
+        if (data) {
+          const robotData: RobotCardProps & { platform?: string } = {
+            id: data.id,
+            title: data.title,
+            description: data.description,
+            price: data.price,
+            imageUrl: "/placeholder.svg",
+            platform: data.platform,
+            tags: [],
+            rating: 4.5,
+          };
+
+          setRobot(robotData);
+        }
+      } catch (error: any) {
+        console.error("Error fetching robot details:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load robot details. Please try again later.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRobotDetails();
+  }, [id, toast]);
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <NavBar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-xl font-bold mb-4">Loading Robot Details...</h1>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!robot) {
     return (
       <div className="min-h-screen flex flex-col">
         <NavBar />
@@ -103,7 +124,7 @@ export default function RobotDetail() {
     );
   }
   
-  const robot = robotData[id];
+  const extraData = robotExtraData[id] || robotExtraData.default;
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -111,12 +132,11 @@ export default function RobotDetail() {
       
       <main className="flex-1 container mx-auto py-8 px-4">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Left Column: Robot Images/Media */}
           <div className="w-full lg:w-1/2">
             <div className="aspect-video rounded-lg overflow-hidden bg-muted mb-4">
-              {robot.videoUrl ? (
+              {extraData.videoUrl ? (
                 <iframe
-                  src={robot.videoUrl}
+                  src={extraData.videoUrl}
                   className="w-full h-full"
                   title={`${robot.title} demo video`}
                   frameBorder="0"
@@ -147,9 +167,13 @@ export default function RobotDetail() {
             </div>
           </div>
           
-          {/* Right Column: Robot Info */}
           <div className="w-full lg:w-1/2">
             <div className="flex flex-wrap gap-2 mb-3">
+              {robot.platform && (
+                <Badge key="platform" variant="secondary">
+                  {robot.platform}
+                </Badge>
+              )}
               {robot.tags?.map((tag) => (
                 <Badge key={tag} variant="secondary">
                   {tag}
@@ -165,7 +189,7 @@ export default function RobotDetail() {
                   <svg
                     key={i}
                     className={`w-5 h-5 ${
-                      i < Math.floor(robot.rating) ? "text-yellow-400" : "text-gray-300"
+                      i < Math.floor(robot.rating || 0) ? "text-yellow-400" : "text-gray-300"
                     }`}
                     fill="currentColor"
                     viewBox="0 0 20 20"
@@ -175,7 +199,7 @@ export default function RobotDetail() {
                   </svg>
                 ))}
                 <span className="ml-2 text-sm text-muted-foreground">
-                  {robot.rating.toFixed(1)} rating
+                  {(robot.rating || 4.5).toFixed(1)} rating
                 </span>
               </div>
             </div>
@@ -215,17 +239,17 @@ export default function RobotDetail() {
               <div className="flex items-center">
                 <Avatar className="h-10 w-10 mr-3">
                   <AvatarImage src="/placeholder.svg" />
-                  <AvatarFallback>{robot.sellerName.charAt(0)}</AvatarFallback>
+                  <AvatarFallback>{extraData.sellerName.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="font-semibold">{robot.sellerName}</h3>
+                  <h3 className="font-semibold">{extraData.sellerName}</h3>
                   <div className="flex items-center text-sm text-muted-foreground">
                     <span className="flex items-center mr-2">
                       {Array.from({ length: 5 }).map((_, i) => (
                         <svg
                           key={i}
                           className={`w-3 h-3 ${
-                            i < Math.floor(robot.sellerRating)
+                            i < Math.floor(extraData.sellerRating)
                               ? "text-yellow-400"
                               : "text-gray-300"
                           }`}
@@ -236,9 +260,9 @@ export default function RobotDetail() {
                           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
                         </svg>
                       ))}
-                      {robot.sellerRating.toFixed(1)}
+                      {extraData.sellerRating.toFixed(1)}
                     </span>
-                    <span>Member since {robot.sellerJoined}</span>
+                    <span>Member since {extraData.sellerJoined}</span>
                   </div>
                 </div>
               </div>
@@ -246,7 +270,6 @@ export default function RobotDetail() {
           </div>
         </div>
         
-        {/* Tabs for additional information */}
         <div className="mt-10">
           <Tabs defaultValue="description">
             <TabsList className="grid w-full grid-cols-3">
@@ -255,11 +278,11 @@ export default function RobotDetail() {
               <TabsTrigger value="compatibility">Compatibility</TabsTrigger>
             </TabsList>
             <TabsContent value="description" className="p-4 bg-card rounded-lg border mt-2">
-              <p className="whitespace-pre-line">{robot.longDescription}</p>
+              <p className="whitespace-pre-line">{extraData.longDescription}</p>
             </TabsContent>
             <TabsContent value="features" className="p-4 bg-card rounded-lg border mt-2">
               <ul className="list-disc pl-5 space-y-2">
-                {robot.features.map((feature, index) => (
+                {extraData.features.map((feature, index) => (
                   <li key={index}>{feature}</li>
                 ))}
               </ul>
@@ -267,7 +290,7 @@ export default function RobotDetail() {
             <TabsContent value="compatibility" className="p-4 bg-card rounded-lg border mt-2">
               <h3 className="font-semibold mb-3">Compatible With:</h3>
               <ul className="list-disc pl-5 space-y-2">
-                {robot.compatibility.map((item, index) => (
+                {extraData.compatibility.map((item, index) => (
                   <li key={index}>{item}</li>
                 ))}
               </ul>
@@ -276,7 +299,6 @@ export default function RobotDetail() {
         </div>
       </main>
       
-      {/* Footer */}
       <footer className="py-10 px-4 md:px-6 border-t mt-12">
         <div className="container mx-auto text-center text-sm text-muted-foreground">
           <p>© {new Date().getFullYear()} ForexRobotX. All rights reserved.</p>
