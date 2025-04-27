@@ -13,6 +13,7 @@ export function useConversations() {
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
 
+      // First, get all conversations the user is part of
       const { data: conversations, error: convoError } = await supabase
         .from('conversations')
         .select(`
@@ -25,10 +26,6 @@ export function useConversations() {
           robots (
             title,
             seller_id
-          ),
-          profiles!conversations_buyer_id_fkey (
-            username,
-            avatar_url
           )
         `)
         .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
@@ -36,23 +33,43 @@ export function useConversations() {
 
       if (convoError) throw convoError;
 
-      const formattedConversations: Chat[] = conversations.map((conversation) => {
+      // For each conversation, get the other user's profile
+      const formattedConversations: Chat[] = await Promise.all(conversations.map(async (conversation) => {
         const isUserBuyer = conversation.buyer_id === user.id;
-        const otherUser = conversation.profiles;
+        const otherUserId = isUserBuyer ? conversation.seller_id : conversation.buyer_id;
+        
+        // Fetch the other user's profile
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('username, avatar_url')
+          .eq('id', otherUserId)
+          .single();
+        
+        // Get the most recent message for this conversation
+        const { data: recentMessages } = await supabase
+          .from('conversation_messages')
+          .select('content, created_at')
+          .eq('conversation_id', conversation.id)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        const lastMessage = recentMessages && recentMessages.length > 0 
+          ? recentMessages[0].content 
+          : '';
         
         return {
           id: conversation.id,
           user: {
-            name: otherUser?.username || 'Unknown User',
-            avatarUrl: otherUser?.avatar_url || '',
-            initials: (otherUser?.username?.charAt(0) || 'U').toUpperCase(),
+            name: profileData?.username || 'Unknown User',
+            avatarUrl: profileData?.avatar_url || '',
+            initials: (profileData?.username?.charAt(0) || 'U').toUpperCase(),
           },
           messages: [],
-          lastMessage: '',
+          lastMessage,
           unread: false,
           timestamp: new Date(conversation.updated_at),
         };
-      });
+      }));
 
       return formattedConversations;
     },
