@@ -1,3 +1,4 @@
+
 import { Chat } from "@/types/chat";
 
 export const mockChats: Chat[] = [
@@ -25,6 +26,7 @@ export const mockChats: Chat[] = [
         timestamp: new Date(Date.now() - 1000 * 60 * 5),
       },
     ],
+    robotId: "robot-001" // Added robotId property
   },
   {
     id: "2",
@@ -50,6 +52,7 @@ export const mockChats: Chat[] = [
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
       },
     ],
+    robotId: "robot-002" // Added robotId property
   },
   {
     id: "3",
@@ -75,5 +78,6 @@ export const mockChats: Chat[] = [
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
       },
     ],
+    robotId: "robot-003" // Added robotId property
   },
 ];
