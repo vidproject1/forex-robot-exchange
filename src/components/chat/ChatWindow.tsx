@@ -96,7 +96,7 @@ export function ChatWindow({
             </Avatar>
             <div>
               <CardTitle className="text-lg">{chat.user.name}</CardTitle>
-              <CardDescription>Seller</CardDescription>
+              <CardDescription>{chat.user.role}</CardDescription>
             </div>
           </div>
           <Button variant="outline" size="sm" asChild>

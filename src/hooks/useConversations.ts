@@ -68,11 +68,12 @@ export function useConversations() {
       const formattedConversations: Chat[] = await Promise.all(conversations.map(async (conversation) => {
         const isUserBuyer = conversation.buyer_id === user.id;
         const otherUserId = isUserBuyer ? conversation.seller_id : conversation.buyer_id;
+        const otherUserRole = isUserBuyer ? 'Seller' : 'Buyer';
         
         // Fetch the other user's profile
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('username, avatar_url')
+          .select('username, avatar_url, account_type')
           .eq('id', otherUserId)
           .single();
         
@@ -95,6 +96,7 @@ export function useConversations() {
             name: profileData?.username || 'Unknown User',
             avatarUrl: profileData?.avatar_url || '',
             initials: (profileData?.username?.charAt(0) || 'U').toUpperCase(),
+            role: otherUserRole, // Set the correct role based on the conversation relationship
           },
           messages: [],
           lastMessage,

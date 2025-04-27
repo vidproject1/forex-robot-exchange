@@ -10,6 +10,7 @@ export interface ChatUser {
   name: string;
   avatarUrl: string;
   initials: string;
+  role: string; // Add role field to store "Buyer" or "Seller"
 }
 
 export interface Chat {
@@ -19,5 +20,5 @@ export interface Chat {
   unread: boolean;
   timestamp: Date;
   messages: Message[];
-  robotId: string; // Add robotId to Chat interface
+  robotId: string;
 }
