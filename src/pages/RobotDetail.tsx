@@ -10,74 +10,66 @@ import { RobotCardProps } from "@/types/robot";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-const robotExtraData: Record<string, {
-  longDescription: string;
-  features: string[];
-  compatibility: string[];
-  sellerName: string;
-  sellerRating: number;
-  sellerJoined: string;
-  videoUrl?: string;
-}> = {
-  default: {
-    longDescription: "This robot is designed to automate your forex trading with advanced algorithms and risk management techniques.",
-    features: [
-      "Adaptive algorithms",
-      "Smart entry and exit points",
-      "Dynamic position sizing",
-      "Risk management",
-      "Multi-timeframe analysis",
-      "Compatible with MT4 and MT5 platforms",
-      "24/7 technical support",
-      "Free updates for 1 year"
-    ],
-    compatibility: [
-      "MetaTrader 4",
-      "MetaTrader 5",
-      "Windows 7/8/10/11",
-      "VPS supported"
-    ],
-    sellerName: "Trading Solutions",
-    sellerRating: 4.5,
-    sellerJoined: "January 2023",
-  }
-};
-
 export default function RobotDetail() {
   const { id } = useParams<{ id: string }>();
   const [isMessageVisible, setIsMessageVisible] = useState(false);
-  const [robot, setRobot] = useState<RobotCardProps & { platform?: string }>(); 
+  const [robot, setRobot] = useState<RobotCardProps & {
+    platform?: string;
+    features?: string[];
+    compatibility?: string[];
+    long_description?: string;
+    seller_id?: string;
+  }>();
+  const [sellerProfile, setSellerProfile] = useState<{
+    username: string;
+    account_type: string;
+    created_at: string;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  
+
   useEffect(() => {
     const fetchRobotDetails = async () => {
       if (!id) return;
-      
+
       try {
-        const { data, error } = await supabase
+        // Fetch robot details
+        const { data: robotData, error: robotError } = await supabase
           .from("robots")
           .select("*")
           .eq("id", id)
           .single();
 
-        if (error) {
-          throw error;
-        }
+        if (robotError) throw robotError;
 
-        if (data) {
-          const robotData: RobotCardProps & { platform?: string } = {
-            id: data.id,
-            title: data.title,
-            description: data.description,
-            price: data.price,
+        if (robotData) {
+          // Fetch seller profile
+          const { data: sellerData, error: sellerError } = await supabase
+            .from("profiles")
+            .select("username, account_type, created_at")
+            .eq("id", robotData.seller_id)
+            .single();
+
+          if (sellerError) throw sellerError;
+
+          setSellerProfile(sellerData);
+
+          const transformedRobot = {
+            id: robotData.id,
+            title: robotData.title,
+            description: robotData.description,
+            long_description: robotData.long_description,
+            price: robotData.price,
             imageUrl: "/placeholder.svg",
-            platform: data.platform,
+            platform: robotData.platform,
+            features: robotData.features || [],
+            compatibility: robotData.compatibility || [],
+            seller_id: robotData.seller_id,
             tags: [],
-            rating: 4.5,
+            rating: 4.5, // We'll implement real ratings later
           };
 
-          setRobot(robotData);
+          setRobot(transformedRobot);
         }
       } catch (error: any) {
         console.error("Error fetching robot details:", error);
@@ -93,7 +85,7 @@ export default function RobotDetail() {
 
     fetchRobotDetails();
   }, [id, toast]);
-  
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -123,9 +115,7 @@ export default function RobotDetail() {
       </div>
     );
   }
-  
-  const extraData = robotExtraData[id] || robotExtraData.default;
-  
+
   return (
     <div className="min-h-screen flex flex-col">
       <NavBar />
@@ -134,22 +124,11 @@ export default function RobotDetail() {
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="w-full lg:w-1/2">
             <div className="aspect-video rounded-lg overflow-hidden bg-muted mb-4">
-              {extraData.videoUrl ? (
-                <iframe
-                  src={extraData.videoUrl}
-                  className="w-full h-full"
-                  title={`${robot.title} demo video`}
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                ></iframe>
-              ) : (
-                <img
-                  src={robot.imageUrl}
-                  alt={robot.title}
-                  className="w-full h-full object-cover"
-                />
-              )}
+              <img
+                src={robot?.imageUrl}
+                alt={robot?.title}
+                className="w-full h-full object-cover"
+              />
             </div>
             <div className="grid grid-cols-4 gap-2">
               {Array.from({ length: 4 }).map((_, index) => (
@@ -169,19 +148,19 @@ export default function RobotDetail() {
           
           <div className="w-full lg:w-1/2">
             <div className="flex flex-wrap gap-2 mb-3">
-              {robot.platform && (
+              {robot?.platform && (
                 <Badge key="platform" variant="secondary">
                   {robot.platform}
                 </Badge>
               )}
-              {robot.tags?.map((tag) => (
+              {robot?.tags?.map((tag) => (
                 <Badge key={tag} variant="secondary">
                   {tag}
                 </Badge>
               ))}
             </div>
             
-            <h1 className="text-3xl font-bold mb-2">{robot.title}</h1>
+            <h1 className="text-3xl font-bold mb-2">{robot?.title}</h1>
             
             <div className="flex items-center mb-4">
               <div className="flex">
@@ -189,7 +168,7 @@ export default function RobotDetail() {
                   <svg
                     key={i}
                     className={`w-5 h-5 ${
-                      i < Math.floor(robot.rating || 0) ? "text-yellow-400" : "text-gray-300"
+                      i < Math.floor(robot?.rating || 0) ? "text-yellow-400" : "text-gray-300"
                     }`}
                     fill="currentColor"
                     viewBox="0 0 20 20"
@@ -199,14 +178,14 @@ export default function RobotDetail() {
                   </svg>
                 ))}
                 <span className="ml-2 text-sm text-muted-foreground">
-                  {(robot.rating || 4.5).toFixed(1)} rating
+                  {(robot?.rating || 4.5).toFixed(1)} rating
                 </span>
               </div>
             </div>
             
             <div className="mb-6">
-              <div className="text-3xl font-bold mb-6">${robot.price}</div>
-              <p className="text-muted-foreground mb-4">{robot.description}</p>
+              <div className="text-3xl font-bold mb-6">${robot?.price}</div>
+              <p className="text-muted-foreground mb-4">{robot?.description}</p>
               
               {isMessageVisible ? (
                 <Card className="mb-4">
@@ -239,30 +218,12 @@ export default function RobotDetail() {
               <div className="flex items-center">
                 <Avatar className="h-10 w-10 mr-3">
                   <AvatarImage src="/placeholder.svg" />
-                  <AvatarFallback>{extraData.sellerName.charAt(0)}</AvatarFallback>
+                  <AvatarFallback>{sellerProfile?.username?.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="font-semibold">{extraData.sellerName}</h3>
+                  <h3 className="font-semibold">{sellerProfile?.username}</h3>
                   <div className="flex items-center text-sm text-muted-foreground">
-                    <span className="flex items-center mr-2">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <svg
-                          key={i}
-                          className={`w-3 h-3 ${
-                            i < Math.floor(extraData.sellerRating)
-                              ? "text-yellow-400"
-                              : "text-gray-300"
-                          }`}
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                        </svg>
-                      ))}
-                      {extraData.sellerRating.toFixed(1)}
-                    </span>
-                    <span>Member since {extraData.sellerJoined}</span>
+                    <span>Member since {new Date(sellerProfile?.created_at || "").toLocaleDateString()}</span>
                   </div>
                 </div>
               </div>
@@ -278,11 +239,11 @@ export default function RobotDetail() {
               <TabsTrigger value="compatibility">Compatibility</TabsTrigger>
             </TabsList>
             <TabsContent value="description" className="p-4 bg-card rounded-lg border mt-2">
-              <p className="whitespace-pre-line">{extraData.longDescription}</p>
+              <p className="whitespace-pre-line">{robot?.long_description || robot?.description}</p>
             </TabsContent>
             <TabsContent value="features" className="p-4 bg-card rounded-lg border mt-2">
               <ul className="list-disc pl-5 space-y-2">
-                {extraData.features.map((feature, index) => (
+                {robot?.features?.map((feature, index) => (
                   <li key={index}>{feature}</li>
                 ))}
               </ul>
@@ -290,7 +251,7 @@ export default function RobotDetail() {
             <TabsContent value="compatibility" className="p-4 bg-card rounded-lg border mt-2">
               <h3 className="font-semibold mb-3">Compatible With:</h3>
               <ul className="list-disc pl-5 space-y-2">
-                {extraData.compatibility.map((item, index) => (
+                {robot?.compatibility?.map((item, index) => (
                   <li key={index}>{item}</li>
                 ))}
               </ul>

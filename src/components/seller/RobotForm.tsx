@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -26,6 +25,9 @@ interface RobotFormProps {
     description: string;
     price: number;
     platform: Platform;
+    features?: string[];
+    compatibility?: string[];
+    long_description?: string;
   };
   mode: "create" | "edit";
 }
@@ -36,6 +38,9 @@ export function RobotForm({ initialData, mode }: RobotFormProps) {
     description: "",
     price: 199,
     platform: "mt4" as Platform,
+    features: [],
+    compatibility: [],
+    long_description: "",
     ...initialData,
   };
 
@@ -45,12 +50,21 @@ export function RobotForm({ initialData, mode }: RobotFormProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === "price" ? parseFloat(value) || 0 : value,
-    }));
+    if (name === "features" || name === "compatibility") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value.split("\n").filter((item) => item.trim() !== ""),
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: name === "price" ? parseFloat(value) || 0 : value,
+      }));
+    }
   };
 
   const handlePlatformChange = (value: Platform) => {
@@ -74,15 +88,19 @@ export function RobotForm({ initialData, mode }: RobotFormProps) {
     setIsLoading(true);
 
     try {
-      if (mode === "create") {
-        const { data, error } = await supabase.from("robots").insert({
-          title: formData.title,
-          description: formData.description,
-          price: formData.price,
-          platform: formData.platform,
-          seller_id: user.id,
-        });
+      const robotData = {
+        title: formData.title,
+        description: formData.description,
+        long_description: formData.long_description,
+        price: formData.price,
+        platform: formData.platform,
+        features: formData.features,
+        compatibility: formData.compatibility,
+        seller_id: user.id,
+      };
 
+      if (mode === "create") {
+        const { error } = await supabase.from("robots").insert(robotData);
         if (error) throw error;
 
         toast({
@@ -90,14 +108,9 @@ export function RobotForm({ initialData, mode }: RobotFormProps) {
           description: "Your robot has been listed successfully.",
         });
       } else if (mode === "edit" && initialData?.id) {
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from("robots")
-          .update({
-            title: formData.title,
-            description: formData.description,
-            price: formData.price,
-            platform: formData.platform,
-          })
+          .update(robotData)
           .eq("id", initialData.id)
           .eq("seller_id", user.id);
 
@@ -185,6 +198,42 @@ export function RobotForm({ initialData, mode }: RobotFormProps) {
                 <SelectItem value="ctrader">cTrader</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="long_description">Detailed Description</Label>
+            <Textarea
+              id="long_description"
+              name="long_description"
+              placeholder="Provide a detailed description of your robot's functionality, strategy, and unique selling points"
+              value={formData.long_description}
+              onChange={handleChange}
+              rows={8}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="features">Features (one per line)</Label>
+            <Textarea
+              id="features"
+              name="features"
+              placeholder="Enter features (one per line)"
+              value={formData.features.join("\n")}
+              onChange={handleChange}
+              rows={5}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="compatibility">Compatibility (one per line)</Label>
+            <Textarea
+              id="compatibility"
+              name="compatibility"
+              placeholder="Enter compatibility requirements (one per line)"
+              value={formData.compatibility.join("\n")}
+              onChange={handleChange}
+              rows={5}
+            />
           </div>
         </CardContent>
 

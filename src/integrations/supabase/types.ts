@@ -77,9 +77,12 @@ export type Database = {
       robots: {
         Row: {
           active: boolean
+          compatibility: string[] | null
           created_at: string
           description: string
+          features: string[] | null
           id: string
+          long_description: string | null
           platform: Database["public"]["Enums"]["trading_platform"]
           price: number
           seller_id: string
@@ -88,9 +91,12 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          compatibility?: string[] | null
           created_at?: string
           description: string
+          features?: string[] | null
           id?: string
+          long_description?: string | null
           platform: Database["public"]["Enums"]["trading_platform"]
           price: number
           seller_id: string
@@ -99,9 +105,12 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          compatibility?: string[] | null
           created_at?: string
           description?: string
+          features?: string[] | null
           id?: string
+          long_description?: string | null
           platform?: Database["public"]["Enums"]["trading_platform"]
           price?: number
           seller_id?: string
