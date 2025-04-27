@@ -1,89 +1,17 @@
 
-import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { NavBar } from "@/components/NavBar";
 import { Button } from "@/components/ui/button";
-import { RobotCardProps } from "@/types/robot";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { RobotImageGallery } from "@/components/robot/RobotImageGallery";
 import { RobotDetails } from "@/components/robot/RobotDetails";
 import { ContactSeller } from "@/components/robot/ContactSeller";
 import { SellerProfile } from "@/components/robot/SellerProfile";
 import { RobotDetailTabs } from "@/components/robot/RobotDetailTabs";
+import { useRobotDetail } from "@/hooks/useRobotDetail";
 
 export default function RobotDetail() {
   const { id } = useParams<{ id: string }>();
-  const [robot, setRobot] = useState<RobotCardProps & {
-    platform?: string;
-    features?: string[];
-    compatibility?: string[];
-    long_description?: string;
-    seller_id?: string;
-  }>();
-  const [sellerProfile, setSellerProfile] = useState<{
-    username: string;
-    account_type: string;
-    created_at: string;
-  } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    const fetchRobotDetails = async () => {
-      if (!id) return;
-
-      try {
-        const { data: robotData, error: robotError } = await supabase
-          .from("robots")
-          .select("*")
-          .eq("id", id)
-          .single();
-
-        if (robotError) throw robotError;
-
-        if (robotData) {
-          const { data: sellerData, error: sellerError } = await supabase
-            .from("profiles")
-            .select("username, account_type, created_at")
-            .eq("id", robotData.seller_id)
-            .single();
-
-          if (sellerError) throw sellerError;
-
-          setSellerProfile(sellerData);
-
-          const transformedRobot = {
-            id: robotData.id,
-            title: robotData.title,
-            description: robotData.description,
-            long_description: robotData.long_description,
-            price: robotData.price,
-            imageUrl: "/placeholder.svg",
-            platform: robotData.platform,
-            features: robotData.features || [],
-            compatibility: robotData.compatibility || [],
-            seller_id: robotData.seller_id,
-            tags: [],
-            rating: 4.5,
-          };
-
-          setRobot(transformedRobot);
-        }
-      } catch (error: any) {
-        console.error("Error fetching robot details:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load robot details. Please try again later.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchRobotDetails();
-  }, [id, toast]);
+  const { robot, sellerProfile, isLoading } = useRobotDetail(id);
 
   if (isLoading) {
     return (
