@@ -17,11 +17,47 @@ export default function Register() {
   const [username, setUsername] = useState("");
   const [accountType, setAccountType] = useState("buyer");
   const [isLoading, setIsLoading] = useState(false);
+  const [usernameChecking, setUsernameChecking] = useState(false);
+  const [usernameError, setUsernameError] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Check if username is already taken
+  const checkUsername = async (username: string) => {
+    if (!username.trim()) {
+      setUsernameError("");
+      return;
+    }
+    
+    setUsernameChecking(true);
+    setUsernameError("");
+    
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("username", username)
+        .single();
+      
+      if (data) {
+        setUsernameError("Username already taken");
+      }
+    } catch (error) {
+      // If error is "No rows found" that means username is available, so no error
+      // We only set error for other types of errors
+      if (error.message !== "No rows found") {
+        console.error("Error checking username:", error);
+      }
+    } finally {
+      setUsernameChecking(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Clear previous errors
+    setUsernameError("");
     
     if (password !== confirmPassword) {
       toast({
@@ -31,10 +67,38 @@ export default function Register() {
       });
       return;
     }
-    
+
+    if (!username.trim()) {
+      setUsernameError("Username is required");
+      toast({
+        title: "Username required",
+        description: "Please provide a username.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Final username check before submission
     setIsLoading(true);
-    
     try {
+      const { data: existingUser } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("username", username)
+        .single();
+      
+      if (existingUser) {
+        setUsernameError("Username already taken");
+        toast({
+          title: "Username already taken",
+          description: "Please choose a different username.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Proceed with registration if username is available
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -54,10 +118,19 @@ export default function Register() {
       });
 
       navigate('/');
-    } catch (error: any) {
+    } catch (error) {
+      let errorMessage = "An unexpected error occurred.";
+      
+      if (error.message.includes("duplicate key") && error.message.includes("username")) {
+        errorMessage = "Username already taken. Please choose a different username.";
+        setUsernameError("Username already taken");
+      } else {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Registration failed",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -89,6 +162,30 @@ export default function Register() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                    // Debounce username check to avoid too many requests
+                    const timer = setTimeout(() => {
+                      checkUsername(e.target.value);
+                    }, 500);
+                    return () => clearTimeout(timer);
+                  }}
+                  className={usernameError ? "border-red-500" : ""}
+                  required
+                />
+                {usernameChecking && (
+                  <p className="text-sm text-muted-foreground">Checking username...</p>
+                )}
+                {usernameError && (
+                  <p className="text-sm text-red-500">{usernameError}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
@@ -135,7 +232,7 @@ export default function Register() {
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={isLoading}
+                  disabled={isLoading || usernameChecking || !!usernameError}
                 >
                   {isLoading ? "Creating account..." : "Create account"}
                 </Button>
