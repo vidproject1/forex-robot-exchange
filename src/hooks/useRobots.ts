@@ -22,7 +22,7 @@ export function useRobots() {
         price: robot.price,
         rating: 4.5,
         tags: Array.isArray(robot.features) ? robot.features.slice(0, 3) : [],
-        imageUrl: robot.images?.[0] || "/placeholder.svg"
+        imageUrl: robot.images && robot.images.length > 0 ? robot.images[0] : "/placeholder.svg"
       })) as RobotCardProps[];
     }
   });

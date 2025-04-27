@@ -11,6 +11,7 @@ interface UseRobotDetailReturn {
     compatibility?: string[];
     long_description?: string;
     seller_id?: string;
+    images?: string[];
   }) | undefined;
   sellerProfile: {
     username: string;
@@ -27,6 +28,7 @@ export function useRobotDetail(id: string | undefined): UseRobotDetailReturn {
     compatibility?: string[];
     long_description?: string;
     seller_id?: string;
+    images?: string[];
   }>();
   const [sellerProfile, setSellerProfile] = useState<{
     username: string;
@@ -66,12 +68,15 @@ export function useRobotDetail(id: string | undefined): UseRobotDetailReturn {
             description: robotData.description,
             long_description: robotData.long_description,
             price: robotData.price,
-            imageUrl: "/placeholder.svg",
+            imageUrl: robotData.images && robotData.images.length > 0 
+              ? robotData.images[0] 
+              : "/placeholder.svg",
             platform: robotData.platform,
             features: robotData.features || [],
             compatibility: robotData.compatibility || [],
             seller_id: robotData.seller_id,
-            tags: [],
+            images: robotData.images || [],
+            tags: Array.isArray(robotData.features) ? robotData.features.slice(0, 3) : [],
             rating: 4.5,
           };
 

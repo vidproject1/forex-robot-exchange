@@ -60,8 +60,9 @@ export default function Marketplace() {
           title: robot.title,
           description: robot.description,
           price: robot.price,
-          imageUrl: "/placeholder.svg", // Using placeholder for now
-          tags: [], // We'll implement tags later if needed
+          imageUrl: robot.images && robot.images.length > 0 ? robot.images[0] : "/placeholder.svg",
+          tags: Array.isArray(robot.features) ? robot.features.slice(0, 3) : [],
+          rating: 4.5,
         }));
 
         setRobots(transformedRobots);

@@ -50,7 +50,12 @@ export default function RobotDetail() {
       <main className="flex-1 container mx-auto py-8 px-4">
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="w-full lg:w-1/2">
-            <RobotImageGallery mainImage={robot.imageUrl} title={robot.title} />
+            <RobotImageGallery 
+              mainImage={robot.imageUrl} 
+              title={robot.title} 
+              robotId={id} 
+              images={robot.images || []}
+            />
           </div>
           
           <div className="w-full lg:w-1/2">
@@ -65,7 +70,7 @@ export default function RobotDetail() {
             
             <ContactSeller 
               sellerId={robot.seller_id} 
-              robotId={id} // Use the URL parameter directly instead of robot.id
+              robotId={id}
             />
             
             <SellerProfile 
