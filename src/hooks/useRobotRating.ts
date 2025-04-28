@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -35,9 +35,9 @@ export function useRobotRating(robotId: string) {
     queryKey: ['robot-rating', robotId],
     queryFn: async () => {
       try {
-        const { data, error } = await supabase.rpc<number, GetRobotRatingParams>(
+        const { data, error } = await supabase.rpc(
           'get_robot_rating', 
-          { robot_id: robotId }
+          { robot_id: robotId } as GetRobotRatingParams
         );
 
         if (error) throw error;
@@ -85,13 +85,13 @@ export function useRobotRating(robotId: string) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Must be logged in to rate');
 
-      const { error } = await supabase.rpc<null, UpsertRobotRatingParams>(
+      const { error } = await supabase.rpc(
         'upsert_robot_rating', 
         {
           p_robot_id: robotId,
           p_rating: ratingData.rating,
           p_comment: ratingData.comment || null
-        }
+        } as UpsertRobotRatingParams
       );
 
       if (error) throw error;
