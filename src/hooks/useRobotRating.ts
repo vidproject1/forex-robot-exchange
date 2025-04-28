@@ -24,6 +24,7 @@ export function useRobotRating(robotId: string) {
     queryKey: ['robot-rating', robotId],
     queryFn: async () => {
       try {
+        // Use the RPC function we created in the database
         const { data, error } = await supabase.rpc('get_robot_rating', {
           robot_id: robotId
         });
@@ -45,12 +46,20 @@ export function useRobotRating(robotId: string) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return null;
 
-        // Instead of direct table access, we can create a view or function
-        // For now, we'll simulate this by returning a default value
-        // You'll need to create a database function to actually retrieve user ratings
-        
-        // Placeholder return until DB is set up
-        return null as UserRating | null;
+        // Now we can directly query the robot_ratings table
+        const { data, error } = await supabase
+          .from('robot_ratings')
+          .select('rating, comment')
+          .eq('robot_id', robotId)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error fetching user rating:', error);
+          return null;
+        }
+
+        return data as UserRating | null;
       } catch (error) {
         console.error('Error fetching user rating:', error);
         return null;
@@ -64,7 +73,7 @@ export function useRobotRating(robotId: string) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Must be logged in to rate');
 
-      // Call the upsert_robot_rating function
+      // Call the upsert_robot_rating function we created
       const { error } = await supabase.rpc('upsert_robot_rating', {
         p_robot_id: robotId,
         p_rating: ratingData.rating,
