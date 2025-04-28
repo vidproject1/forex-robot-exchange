@@ -14,6 +14,17 @@ interface UserRating {
   comment?: string | null;
 }
 
+// Define the type for our RPC function parameters
+interface GetRobotRatingParams {
+  robot_id: string;
+}
+
+interface UpsertRobotRatingParams {
+  p_robot_id: string;
+  p_rating: number;
+  p_comment: string | null;
+}
+
 export function useRobotRating(robotId: string) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -25,9 +36,10 @@ export function useRobotRating(robotId: string) {
     queryFn: async () => {
       try {
         // Use the RPC function we created in the database
-        const { data, error } = await supabase.rpc('get_robot_rating', {
-          robot_id: robotId
-        } as any);
+        const { data, error } = await supabase.rpc<number, GetRobotRatingParams>(
+          'get_robot_rating', 
+          { robot_id: robotId }
+        );
 
         if (error) throw error;
         return data || 0;
@@ -47,7 +59,7 @@ export function useRobotRating(robotId: string) {
         if (!user) return null;
 
         // Now we can directly query the robot_ratings table
-        // Use type assertion to bypass TypeScript's type checking
+        // We need to use `any` here since TypeScript doesn't know about our custom table
         const response = await (supabase as any)
           .from('robot_ratings')
           .select('rating, comment')
@@ -77,11 +89,14 @@ export function useRobotRating(robotId: string) {
       if (!user) throw new Error('Must be logged in to rate');
 
       // Call the upsert_robot_rating function we created
-      const { error } = await supabase.rpc('upsert_robot_rating', {
-        p_robot_id: robotId,
-        p_rating: ratingData.rating,
-        p_comment: ratingData.comment || null
-      } as any);
+      const { error } = await supabase.rpc<null, UpsertRobotRatingParams>(
+        'upsert_robot_rating', 
+        {
+          p_robot_id: robotId,
+          p_rating: ratingData.rating,
+          p_comment: ratingData.comment || null
+        }
+      );
 
       if (error) throw error;
 
