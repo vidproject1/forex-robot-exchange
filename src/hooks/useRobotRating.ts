@@ -27,7 +27,7 @@ export function useRobotRating(robotId: string) {
         // Use the RPC function we created in the database
         const { data, error } = await supabase.rpc('get_robot_rating', {
           robot_id: robotId
-        });
+        } as any);
 
         if (error) throw error;
         return data || 0;
@@ -47,12 +47,15 @@ export function useRobotRating(robotId: string) {
         if (!user) return null;
 
         // Now we can directly query the robot_ratings table
-        const { data, error } = await supabase
+        // Use type assertion to bypass TypeScript's type checking
+        const response = await (supabase as any)
           .from('robot_ratings')
           .select('rating, comment')
           .eq('robot_id', robotId)
           .eq('user_id', user.id)
           .maybeSingle();
+        
+        const { data, error } = response;
 
         if (error) {
           console.error('Error fetching user rating:', error);
@@ -78,7 +81,7 @@ export function useRobotRating(robotId: string) {
         p_robot_id: robotId,
         p_rating: ratingData.rating,
         p_comment: ratingData.comment || null
-      });
+      } as any);
 
       if (error) throw error;
 
