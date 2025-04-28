@@ -35,7 +35,6 @@ export function useRobotRating(robotId: string) {
     queryKey: ['robot-rating', robotId],
     queryFn: async () => {
       try {
-        // Use the RPC function we created in the database
         const { data, error } = await supabase.rpc<number, GetRobotRatingParams>(
           'get_robot_rating', 
           { robot_id: robotId }
@@ -58,8 +57,6 @@ export function useRobotRating(robotId: string) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return null;
 
-        // Now we can directly query the robot_ratings table
-        // We need to use `any` here since TypeScript doesn't know about our custom table
         const response = await (supabase as any)
           .from('robot_ratings')
           .select('rating, comment')
@@ -88,7 +85,6 @@ export function useRobotRating(robotId: string) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Must be logged in to rate');
 
-      // Call the upsert_robot_rating function we created
       const { error } = await supabase.rpc<null, UpsertRobotRatingParams>(
         'upsert_robot_rating', 
         {

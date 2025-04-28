@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -69,14 +68,14 @@ export function RobotCard({
             <Star
               key={index}
               className={`w-4 h-4 ${
-                index <= averageRating
+                index <= (averageRating as number)
                   ? "text-yellow-400 fill-yellow-400"
                   : "text-gray-300"
               }`}
             />
           ))}
           <span className="ml-1 text-xs text-muted-foreground">
-            {averageRating.toFixed(1)}
+            {(averageRating as number).toFixed(1)}
           </span>
         </div>
         <Link to={`/robot/${id}`}>

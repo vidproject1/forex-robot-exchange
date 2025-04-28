@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Star } from "lucide-react";
 import { useRobotRating } from "@/hooks/useRobotRating";
@@ -52,14 +51,14 @@ export function RobotDetails({
               <Star
                 key={index}
                 className={`w-5 h-5 ${
-                  index <= averageRating
+                  index <= (averageRating as number)
                     ? "text-yellow-400 fill-yellow-400"
                     : "text-gray-300"
                 }`}
               />
             ))}
             <span className="ml-2 text-sm text-muted-foreground">
-              {averageRating.toFixed(1)}
+              {(averageRating as number).toFixed(1)}
             </span>
           </div>
         </div>
